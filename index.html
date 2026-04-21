@@ -456,13 +456,44 @@ function onCityChange(){
   if(v.length >= 2) triggerSearch(v);
 }
 
-function onAddrInput(){
-  const v=document.getElementById('addr-input').value.trim();
-  document.getElementById('addr-clear').className='addr-clear'+(v?' visible':'');
-  if(!v){hideSuggestions();selectedAddr=null;document.getElementById('addr-search-btn').disabled=true;return;}
-  clearTimeout(addrDebounce);
-  if(v.length<2){hideSuggestions();return;}
-  addrDebounce=setTimeout(()=>triggerSearch(v),400);
+let geocodeTimer = null;
+
+function onAddrInput() {
+  const val = document.getElementById('addr-input').value.trim();
+  document.getElementById('addr-clear').className = 'addr-clear' + (val ? ' visible' : '');
+  document.getElementById('addr-search-btn').disabled = true;
+  selectedAddr = null;
+  hideSuggestions();
+
+  if (val.length < 3) return;
+
+  // Debounce — wait 400ms after user stops typing
+  clearTimeout(geocodeTimer);
+  geocodeTimer = setTimeout(() => fetchGeocodeResults(val), 400);
+}
+
+function fetchGeocodeResults(query) {
+  // Bias results to the South Bay area
+  const url = `https://nominatim.openstreetmap.org/search?` +
+    `q=${encodeURIComponent(query + ', San Jose CA')}&` +
+    `format=json&limit=6&` +
+    `viewbox=-122.1,37.18,-121.75,37.47&bounded=0` +
+    `&addressdetails=1`;
+
+  fetch(url, { headers: { 'Accept-Language': 'en' } })
+    .then(r => r.json())
+    .then(data => {
+      const results = data.map(item => ({
+        name: item.display_name.split(',').slice(0, 2).join(','),
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon),
+        city: item.display_name.split(',').slice(2, 4).join(',').trim()
+      }));
+      showSuggestions(results);
+    })
+    .catch(() => {
+      document.getElementById('addr-status').textContent = 'Search unavailable. Check your connection.';
+    });
 }
 
 function triggerSearch(street){

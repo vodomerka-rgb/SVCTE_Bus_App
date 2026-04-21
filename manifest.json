@@ -1,7 +1,7 @@
 {
   "name": "SVCTE Bus",
   "short_name": "SVCTE Bus",
-  "start_url": "/svcte-bus-app-v4.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#120a1e",
   "theme_color": "#120a1e",
